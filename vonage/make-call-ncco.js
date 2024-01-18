@@ -1,0 +1,51 @@
+require('dotenv').config()
+const fs = require('fs')
+
+const TO_NUMBER = process.env.TO_NUMBER
+const VONAGE_NUMBER = process.env.VONAGE_NUMBER
+
+const VONAGE_API_KEY = process.env.VONAGE_API_KEY
+const VONAGE_API_SECRET = process.env.VONAGE_API_SECRET
+const VONAGE_APPLICATION_ID = process.env.VONAGE_APPLICATION_ID
+const VONAGE_APPLICATION_PRIVATE_KEY_PATH = process.env.VONAGE_APPLICATION_PRIVATE_KEY_PATH
+const NGROK_URL = process.env.NGROK_URL
+
+const { Vonage } = require('@vonage/server-sdk')
+const { NCCOBuilder, Talk, OutboundCallWithNCCO } = require('@vonage/voice')
+
+const privateKey = fs.readFileSync(VONAGE_APPLICATION_PRIVATE_KEY_PATH);
+const vonage = new Vonage({
+    apiKey: VONAGE_API_KEY,
+    apiSecret: VONAGE_API_SECRET,
+    applicationId: VONAGE_APPLICATION_ID,
+    privateKey: privateKey,
+})
+
+async function makeCall() {
+    vonage.voice.createOutboundCall({
+        to: [{
+            type: 'phone',
+            number: TO_NUMBER //13308798656, 15087949928
+        }],
+        from: {
+            type: 'phone',
+            number: VONAGE_NUMBER
+        },
+        ncco: [
+            {
+                "action": "connect",
+                "from": VONAGE_NUMBER,
+                "endpoint": [
+                    {
+                        "type": "websocket",
+                        "uri": `wss://${NGROK_URL}/socket`,
+                        // "content-type": "audio/l16;rate=16000",
+                    }
+                ]
+            }
+        ]
+    })
+        .then(resp => console.log(resp))
+        .catch(err => console.error(err));
+}
+makeCall();
