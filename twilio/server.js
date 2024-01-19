@@ -132,7 +132,7 @@ class MediaStream {
                 responseType: "stream",
             });
         } catch (err) {
-            console.log(err.response);
+            log("ERROR: ", err.response);
             // log("error: ", err.stringify());
         }
 
@@ -140,7 +140,7 @@ class MediaStream {
         // Timer to measure response time
 
         const input = response.data;
-        log("input", input);
+        // log("input", input);
 
         // Creating a PassThrough stream for the µ-law conversion
         const outputMulaw = new stream.PassThrough();
@@ -176,6 +176,8 @@ class MediaStream {
         outputMulaw.on("end", () => {
             this.isPlaying = false;
         });
+
+        log("Audio Stream ended");
     }
 
     async invokeStreamProcess(prompt, streamSid) {
@@ -214,32 +216,23 @@ class MediaStream {
             }
         }), new Transform({
             construct(callback) {
-                this.isActionPart = false;
+                // this.isActionPart = false;
                 this.partialResp = '';
                 callback();
             }, transform(chunk, encoding, callback) {
                 if (chunk.toString() !== `[DONE]`) {
                     const content = JSON.parse(chunk).choices[0].delta?.content || "";
-                    log(util.inspect(content));
-                    fullResp += content;
+                    // log(util.inspect(content));
+                    // fullResp += content;
                     if ((content === '.' || content === '!' || content === '?' || content === '?\"' || content === '\\n' || content.endsWith('\n'))) {
-                        if (this.isActionPart === false) {
-                            this.push(this.partialResp + content);
-                            this.partialResp = '';
-                        } else {
-                            this.push(this.partialResp);
-                            this.partialResp = '';
-                            this.isActionPart = false;
-                        }
-                    } else {
-                        if (this.partialResp === 'action:') {
-                            this.isActionPart = true;
-                            this.partialResp += content;
-                        } else {
-                            this.partialResp += content;
-                        }
+                        this.push(this.partialResp + content);
+                        this.partialResp = '';
+                    } 
+                    else {
+                        this.partialResp += content;
                     }
                 } else {
+                    // log('partialResp', this.partialResp);
                     this.push(this.partialResp);
                 }
                 callback();
@@ -264,63 +257,70 @@ class MediaStream {
         };
         for await (const value of generator) {
             const string = value.toString();
-            // log("~~~~~~~~~~~~ String ~~~~~~~~~~~~");
-            // log(string);
-            // log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            if (string.startsWith('<<action_block>>') || string.startsWith('#####')) {
-                action = '';
-            } else {
-                // log("Value Part####" + string);
-                if (action !== '') {
-                    // log("Action: " + action);
-                    if (action === "Speak") {
-                        if (string.startsWith("action_input: ")) {
-                            await this.sendAudioStream(string.slice(14), streamSid);
-                        } else {
-                            await this.sendAudioStream(string, streamSid);
-                        }
-                        await waitToFinish();
-                    } else if (action === "Press Buttons") {
-                        this.agent.update_message(fullResp);
-                        await update_agent_message(this.agent.messages.slice(1), this.call_id);
-                        const num = string.startsWith("action_input: ") ? string.slice(14) : string;
-                        const response = new VoiceResponse();
-                        response.play({ digits: num });
-                        response.say(`I pressed button ${num}`);
-                        const start_stream = response.connect();
-                        const websocket_stream = start_stream.stream({
-                            url: `wss://${ngrokURL}`,
-                            track: "inbound_track"
-                        });
-                        websocket_stream.parameter({ name: `call_id`, value: this.call_id })
-                        client.calls(this.callSid)
-                            .update({ twiml: response.toString() })
-                            .then((call) => log(call.to));
-                    }
-                } else if (string.startsWith("action: ")) {
-                    action = string.slice(8);
-                    if (action === "Finish") {
-                        this.connection.close()
-                        this.close();
-                    } else if (action === "Dial") {
-                        this.agent.update_message(fullResp);
-                        await update_agent_message(this.agent.messages.slice(1), this.call_id);
-                        const number = "650-750-8255";
-                        const response = new VoiceResponse();
-                        response.dial({ hangupOnStar: true }, number);
-                        response.say(`Dial Finished with ${number}`);
-                        const start_stream = response.connect();
-                        const websocket_stream = start_stream.stream({
-                            url: `wss://${ngrokURL}`,
-                            track: "inbound_track"
-                        });
-                        websocket_stream.parameter({ name: `call_id`, value: this.call_id });
-                        client.calls(this.callSid)
-                            .update({ twiml: response.toString() })
-                            .then((call) => log(call.to));
-                    }
-                }
-            }
+            log("~~~~~~~~~~~~ String ~~~~~~~~~~~~");
+            log(string);
+            fullResp += string;
+            log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+            this.sendAudioStream(string, streamSid);
+            await waitToFinish();
+            // if (string.startsWith('<<action_block>>') || string.startsWith('#####')) {
+            //     action = '';
+            //     // throw new Error('Action block');
+            // } else {
+            //     // log("Value Part####" + string);
+            //     if (action !== '') {
+            //         // log("Action: " + action);
+            //         if (action === "Speak") {
+            //             if (string.startsWith("action_input: ")) {
+            //                 await this.sendAudioStream(string.slice(14), streamSid);
+            //                 fullResp += string.slice(14);
+            //             } else {
+            //                 await this.sendAudioStream(string, streamSid);
+            //                 fullResp += string;
+            //             }
+            //             await waitToFinish();
+            //         } 
+            //         // else if (action === "Press Buttons") {
+            //         //     this.agent.update_message(fullResp);
+            //         //     await update_agent_message(this.agent.messages.slice(1), this.call_id);
+            //         //     const num = string.startsWith("action_input: ") ? string.slice(14) : string;
+            //         //     const response = new VoiceResponse();
+            //         //     response.play({ digits: num });
+            //         //     response.say(`I pressed button ${num}`);
+            //         //     const start_stream = response.connect();
+            //         //     const websocket_stream = start_stream.stream({
+            //         //         url: `wss://${ngrokURL}`,
+            //         //         track: "inbound_track"
+            //         //     });
+            //         //     websocket_stream.parameter({ name: `call_id`, value: this.call_id })
+            //         //     client.calls(this.callSid)
+            //         //         .update({ twiml: response.toString() })
+            //         //         .then((call) => log(call.to));
+            //         // }
+            //     } else if (string.startsWith("action: ")) {
+            //         action = string.slice(8);
+            //         // if (action === "Finish") {
+            //         //     this.connection.close()
+            //         //     this.close();
+            //         // } else if (action === "Dial") {
+            //         //     this.agent.update_message(fullResp);
+            //         //     await update_agent_message(this.agent.messages.slice(1), this.call_id);
+            //         //     const number = "650-750-8255";
+            //         //     const response = new VoiceResponse();
+            //         //     response.dial({ hangupOnStar: true }, number);
+            //         //     response.say(`Dial Finished with ${number}`);
+            //         //     const start_stream = response.connect();
+            //         //     const websocket_stream = start_stream.stream({
+            //         //         url: `wss://${ngrokURL}`,
+            //         //         track: "inbound_track"
+            //         //     });
+            //         //     websocket_stream.parameter({ name: `call_id`, value: this.call_id });
+            //         //     client.calls(this.callSid)
+            //         //         .update({ twiml: response.toString() })
+            //         //         .then((call) => log(call.to));
+            //         // }
+            //     }
+            // }
         }
         this.agent.update_message(fullResp);
         log(`Full Response: ${fullResp}`)
@@ -407,7 +407,8 @@ class MediaStream {
                 return;
             }
             const track = data.media.track;
-            // log(track);
+            // log('track: ', track);
+            // console.log(track);
             // When a new track is identified, and no transcription or playback is in progress
             if (!this.trackHandlers[track]) {
                 // The function createNewStream sets up the specifications for a new audio stream
@@ -434,6 +435,7 @@ class MediaStream {
                 // The function sendAudioStream handles sending an audio stream
                 let currentAudioStream = null;
                 const handleTranscription = this.debounce(async (transcription) => {
+                    // log("Transcription Handler called: ", transcription);
                     const mediaData = {
                         event: "clear", streamSid: data?.streamSid,
                     };
@@ -458,13 +460,15 @@ class MediaStream {
                 }, 1);
                 // service.on("transcription", handleTranscription);
                 service.addListener("transcriptReceived", (message) => {
+                    // log("Listener - Transcript Received", message);
                     const data = JSON.parse(message);
                     if (data.is_final) {
                         this.intermediateTranscript = this.intermediateTranscript + data?.channel?.alternatives[0]?.transcript;
-
+                        log('intermediateTranscript', this.intermediateTranscript);
                     }
                     if (data?.is_final && data?.speech_final && data?.channel?.alternatives[0]?.transcript) {
                         // transcript_byte(this.call_id, 'human', this.intermediateTranscript)
+                        log("Intermediate Transcript Process", this.intermediateTranscript);
                         handleTranscription(this.intermediateTranscript);
                     }
                 });
@@ -485,11 +489,14 @@ class MediaStream {
                 }
             }
             if (!this.isPlaying) {
+                // console.log('this.trackHandlers[track].getReadyState()', this.trackHandlers[track].getReadyState());
                 if (this.trackHandlers[track].getReadyState() == 1) {
+                    // log("Sent buffer to handler");
+                    // console.log(data.media.payload);
                     this.trackHandlers[track].send(Buffer.from(data.media.payload, "base64"));
                 }
             }
-
+            // console.log(this.isPlaying);
             // only send new data if not currently transcribing
         } else if (message.type === "binary") {
             log("Media WS: binary message received (not supported)");
@@ -528,6 +535,7 @@ app.post("/twiml", function (req, res) {
     log("Twilio: /twiml");
     const queryObject = req.query;
     const response = new VoiceResponse();
+    log('queryObject');
     if (queryObject) {
         const start_stream = response.connect();
 
@@ -595,25 +603,17 @@ app.post("/getRecording", function (req, res) {
 
     // res.json({"status":"success"})
 });
-const sensitiveNumbers = ['911', '112', '999'];
 
 app.post('/call', async (req, res) => {
-    const { phone_number, objective, params, v } = req.body;
+    const { phone_number } = req.body;
 
     voice_to_use = "21m00Tcm4TlvDq8ikWAM"
 
     log("Voice to use ", voice_to_use)
 
-    let flattenedParams = flattenObj(params);
-    // log(voice_to_use)
-    let callParams = {
-        phone_number, objective, ...flattenedParams, voice_to_use
-    };
-
     const call_id = uuidv4();
     let url = `https://${ngrokURL}/twiml?call_id=${call_id}`;
-    // let url =`https://handler.twilio.com/twiml/EH3549f908e885721fe40ed2971d3ca91a`;
-    log(url);
+    // log(url);
     client.calls
         .create({
             url: url,
