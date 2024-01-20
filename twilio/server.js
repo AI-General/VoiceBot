@@ -443,9 +443,9 @@ class MediaStream {
                         this.connection.sendUTF(JSON.stringify(mediaData));
                         // clear audio buffer.
                     }
-                    if (this.isPlaying) {
-                        return
-                    }
+                    // if (this.isPlaying) {
+                    //     return
+                    // }
                     // add this line to prevent a new transcription
                     // log(chalk.white.bgMagenta('\n[Human] : '), `${transcription}`, "\n");
                     const toHoldTranscription = transcription;
@@ -466,10 +466,13 @@ class MediaStream {
                         this.intermediateTranscript = this.intermediateTranscript + data?.channel?.alternatives[0]?.transcript;
                         log('intermediateTranscript', this.intermediateTranscript);
                     }
-                    if (data?.is_final && data?.speech_final && data?.channel?.alternatives[0]?.transcript) {
+                    if (data?.is_final && data?.speech_final && data?.channel?.alternatives[0]?.transcript && !this.isPlaying) {
                         // transcript_byte(this.call_id, 'human', this.intermediateTranscript)
                         log("Intermediate Transcript Process", this.intermediateTranscript);
                         handleTranscription(this.intermediateTranscript);
+                    }
+                    if (data?.is_final && data?.speech_final && !data?.channel?.alternatives[0]?.transcript) {
+                        log("______________________________REALLY BORING______________________________");
                     }
                 });
                 service.addListener("close", (e) => {
