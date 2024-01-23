@@ -45,7 +45,7 @@ app.post('/answer', (req, res) => {
 })
 
 app.post('/event', (req, res) => {
-    log(`Event status`, req.body['status']);
+    // log(`Event status`, req.body['status']);
     // res.send(200);
 })
 

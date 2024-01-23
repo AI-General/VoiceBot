@@ -12,6 +12,7 @@ const NGROK_URL = process.env.NGROK_URL
 
 const { Vonage } = require('@vonage/server-sdk')
 const { NCCOBuilder, Talk, OutboundCallWithNCCO } = require('@vonage/voice')
+const { log } = require('console')
 
 const privateKey = fs.readFileSync(VONAGE_APPLICATION_PRIVATE_KEY_PATH);
 const vonage = new Vonage({
@@ -21,6 +22,7 @@ const vonage = new Vonage({
     privateKey: privateKey,
 })
 
+console.log(NGROK_URL)
 async function makeCall() {
     vonage.voice.createOutboundCall({
         to: [{
