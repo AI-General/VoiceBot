@@ -41,7 +41,7 @@ async function makeCall() {
                     {
                         "type": "websocket",
                         "uri": `wss://${NGROK_URL}/socket`,
-                        // "content-type": "audio/l16;rate=16000",
+                        // "content-type": "audio/l16;rate=8000",
                     }
                 ]
             }

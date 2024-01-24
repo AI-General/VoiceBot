@@ -36,7 +36,7 @@ app.post('/answer', (req, res) => {
                 {
                     "type": "websocket",
                     "uri": `wss://${NGROK_URL}/socket`,
-                    // "content-type": "audio/l16;rate=16000",
+                    // "content-type": "audio/l16;rate=8000",
                 }
             ]
         }
@@ -45,7 +45,7 @@ app.post('/answer', (req, res) => {
 })
 
 app.post('/event', (req, res) => {
-    // log(`Event status`, req.body['status']);
+    log(`Event status`, req.body['status']);
     // res.send(200);
 })
 
