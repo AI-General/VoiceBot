@@ -13,6 +13,8 @@ SERVER_URL = process.env.SERVER_URL;
 DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
 
 const deepgram = createClient(DEEPGRAM_API_KEY);
+const VONAGE_NUMBER = process.env.VONAGE_NUMBER;
+const NGROK_URL = process.env.NGROK_URL;
 // const live = deepgram
 const dgconnection = deepgram.listen.live({
     model: "nova",
