@@ -116,7 +116,7 @@ class MediaStream {
     async sendAudioStream(text) {
         this.isPlaying = true;
         console.log("isPlaying: True");
-        console.log("sending audio stream: ", text);
+        // console.log("sending audio stream: ", text);
         const voiceId = this.voice ? this.voice : '21m00Tcm4TlvDq8ikWAM'; // Replace with your voiceId
         let response;
         const Elevenlabs_Key = process.env.XI_API_KEY;
@@ -143,7 +143,7 @@ class MediaStream {
             log("ERROR: ", err);
         }
 
-        log("elevenlabs passed");
+        // log("elevenlabs passed");
 
         const input = response.data;
         // console.log("response", response);
@@ -286,68 +286,152 @@ class MediaStream {
     async invokeStreamProcess(prompt) {
         // this.isPlaying = true;
         const OpenAI_API_Key = process.env.OPENAI_API_KEY;
-        let response = await fetch("https://api.openai.com/v1/chat/completions", {
-            headers: {
-                "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
-            }, method: "POST", body: JSON.stringify({
-                model: "gpt-4", messages: prompt, temperature: 0.75, top_p: 0.95, // stop: ["\n\n"],
-                frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1,
-            }),
-        });
+        const OpenAI_API_Base = process.env.OPENAI_API_BASE;
+        const LLM_MODEL = process.env.LLM_MODEL;
+        const IS_LOCAL = process.env.IS_LOCAL === "true";
+        console.log("OpenAI_API_Base: ", OpenAI_API_Base);
 
+        console.log(prompt);
         let fullResp = '';
-        const generator = pipeline(response.body, new Transform({
-            construct(callback) {
-                this.buffer = '';
-                callback();
-            }, transform(chunk, encoding, callback) {
-                if (chunk.toString().startsWith("data: ")) {
-                    this.buffer = "";
-                }
-                for (const data of (this.buffer + chunk).toString().split('\n')) {
-                    if (data) {
-                        // log('data', data);
-                        if (data.endsWith("}]}")) {
-                            this.push(data.slice(6));
-                        } else if (data === "data: [DONE]") {
-                            this.push(data.slice(6))
-                        } else {
-                            this.buffer = data;
+        let generator;
+        if (!IS_LOCAL) {
+
+            let response = await fetch(`${OpenAI_API_Base}/chat/completions`, {
+                headers: {
+                    "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
+                }, method: "POST", body: JSON.stringify({
+                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, // stop: ["\n\n", "[INST]", '</s>'],
+                    frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1, 
+                }),
+            });
+
+            generator = pipeline(response.body, new Transform({
+                construct(callback) {
+                    this.buffer = '';
+                    callback();
+                }, transform(chunk, encoding, callback) {
+                    console.log(chunk.toString());
+                    if (chunk.toString().startsWith("data: ")) {
+                        this.buffer = "";
+                    }
+                    for (const data of (this.buffer + chunk).toString().split('\n')) {
+                        if (data) {
+                            log('data', data);
+                            if (data.endsWith("}]}")) {
+                                this.push(data.slice(6));
+                            } else if (data === "data: [DONE]") {
+                                this.push(data.slice(6))
+                            } else {
+                                this.buffer = data;
+                            }
                         }
                     }
+                    callback();
                 }
-                callback();
-            }
-        }), new Transform({
-            construct(callback) {
-                // this.isActionPart = false;
-                this.partialResp = '';
-                callback();
-            }, transform(chunk, encoding, callback) {
-                if (chunk.toString() !== `[DONE]`) {
-                    const content = JSON.parse(chunk).choices[0].delta?.content || "";
-                    // log(util.inspect(content));
-                    // fullResp += content;
-                    if ((content === '.' || content === '!' || content === '?' || content === '?\"' || content === '\\n' || content.endsWith('\n'))) {
-                        this.push(this.partialResp + content);
-                        this.partialResp = '';
+            }), new Transform({
+                construct(callback) {
+                    // this.isActionPart = false;
+                    this.partialResp = '';
+                    callback();
+                }, transform(chunk, encoding, callback) {
+                    // console.log(chunk.toString());
+                    if (chunk.toString() !== `[DONE]`) {
+                        const content = JSON.parse(chunk).choices[0].delta?.content || "";
+                        // log(util.inspect(content));
+                        // fullResp += content;
+                        if ((content === '.' || content === '!' || content === '?' || content === '?\"' || content === '\\n' || content.endsWith('\n'))) {
+                            this.push(this.partialResp + content);
+                            this.partialResp = '';
+                        }
+                        else {
+                            this.partialResp += content;
+                        }
+                    } else {
+                        // log('partialResp', this.partialResp);
+                        this.push(this.partialResp);
                     }
-                    else {
-                        this.partialResp += content;
-                    }
+                    callback();
+                }
+            }), (err) => {
+                if (err) {
+                    console.error('failed', err);
                 } else {
-                    // log('partialResp', this.partialResp);
-                    this.push(this.partialResp);
+                    log('completed');
                 }
-                callback();
-            }
-        }), (err) => {
-            if (err) {
-                console.error('failed', err);
-            } else {
-                log('completed');
-            }
-        },);
+            },);
+        } else {
+            let response = await fetch(`${OpenAI_API_Base}/chat/completions`, {
+                headers: {
+                    "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
+                }, method: "POST", body: JSON.stringify({
+                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, stop: ["[", '</s>', "\n\n"],
+                    frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1, 
+                }),
+            });
+
+            // let fullResp = '';
+            generator = pipeline(response.body, new Transform({
+                construct(callback) {
+                    this.buffer = '';
+                    callback();
+                }, transform(chunk, encoding, callback) {
+                    // console.log(chunk.toString());
+                    if (chunk.toString().startsWith("data: ")) {
+                        this.buffer = "";
+                    }
+                    for (const data of (this.buffer + chunk).toString().split('\n')) {
+                        if (data) {
+                            // log('data', data);
+                            if (data.endsWith("}]}")) {
+                                this.push(data.slice(6));
+                            } else if (data === "data: [DONE]") {
+                                this.push(data.slice(6))
+                            } else {
+                                this.buffer = data;
+                            }
+                        }
+                    }
+                    callback();
+                }
+            }), new Transform({
+                construct(callback) {
+                    // this.isActionPart = false;
+                    this.partialResp = '';
+                    this.isEnd = false;
+                    callback();
+                }, transform(chunk, encoding, callback) {
+                    // console.log(chunk.toString());
+                    if (chunk.toString() !== `[DONE]`) {
+                        const content = JSON.parse(chunk).choices[0].delta?.content || "";
+                        // log(util.inspect(content));
+                        // fullResp += content;
+                        if (!this.isEnd && (content === '.' || content === '!' || content === '?' || content === '?\"' || content === '\\n' || content.endsWith('\n'))) {
+                            this.push(this.partialResp + content);
+                            this.partialResp = '';
+                        }
+                        else if (this.partialResp === '' && (content === ' [' || content === ' ')) {
+                            console.log('isEnd', this.isEnd);
+                            this.isEnd = true;
+                            // this.push(null);
+                            // callback();
+                        }
+                        else {
+                            this.partialResp += content;
+                        }
+                    } else {
+                        log('ELSE partialResp', this.partialResp);
+                        this.push(this.partialResp);
+                    }
+                    callback();
+                }
+            }), (err) => {
+                if (err) {
+                    console.error('failed', err);
+                } else {
+                    log('completed');
+                }
+            },);            
+        }
 
         const waitToFinish = async () => {
             return new Promise((resolve) => {

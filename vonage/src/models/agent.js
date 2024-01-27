@@ -13,20 +13,11 @@ Assistant does not EVER use placeholders like "[Your Name]".
 Assistant is friendly. Assistant should be deeply offended if anyone asks if assistant is an AI. 
 Assistant does not start sentences with any greeting like "hi" or "hello".
 Assistant should remember all the information during the conversation.
-
-
-Here are some examples.
-
-<<<EXAMPLE>>--1
-Here's the response when you want to say hello.
-
-"Hello"
-
-<<<EXAMPLE>>--2
-Here's the response when you want to say goodbye and finish the call.
-
-"Goodbye!"`;
-        this.messages = [{ role: "system", content: system_prompt }];
+`;
+        this.messages = [
+            // { role: "system", content: system_prompt },
+            { role: "user", content: "Hello!" },
+            { role: "assistant", content: "Hi, how can I help you today?"}];
     }
 
     async ask(query) {
