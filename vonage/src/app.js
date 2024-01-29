@@ -33,7 +33,7 @@ app.post('/answer', (req, res) => {
     const ncco = [
         {
             "action": "connect",
-            "from": VONAGE_NUMBER,
+            "from": req.body['to'],
             "endpoint": [
                 {
                     "type": "websocket",
