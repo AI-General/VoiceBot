@@ -52,6 +52,8 @@ class MediaStream {
         // dgconnection.on(LiveTranscriptionEvents.Transcript, this.dgtranscript.bind(this));
         console.log('6');
         log(`Media WS: created`);
+
+        this.sendAudioStream("Hello!");
     }
 
     processMessage(message) {
