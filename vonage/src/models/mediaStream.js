@@ -104,7 +104,7 @@ class MediaStream {
         if (data['is_final'] && !this.isPlaying) {
             this.intermediateTranscript += data['channel']['alternatives'][0]['transcript'];
         }
-        if (data['speech_final'] && data['channel']['alternatives'][0]['transcript'] && !this.isPlaying) {
+        if (data['speech_final'] && data['channel']['alternatives'][0]['transcript'] && !this.isPlaying && this.agent.messages[this.agent.messages.length - 1]['role'] === 'assistant') {
             this.handleTranscript(this.intermediateTranscript);
             this.intermediateTranscript = "";
         }

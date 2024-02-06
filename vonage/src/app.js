@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const dotenv = require('dotenv');
 const express = require('express');
 
@@ -6,11 +8,29 @@ const { log } = require('./utils/log.js');
 
 dotenv.config();
 
+const VONAGE_API_KEY = process.env.VONAGE_API_KEY
+const VONAGE_API_SECRET = process.env.VONAGE_API_SECRET
+const VONAGE_APPLICATION_ID = process.env.VONAGE_APPLICATION_ID
+const VONAGE_APPLICATION_PRIVATE_KEY_PATH = process.env.VONAGE_APPLICATION_PRIVATE_KEY_PATH
+const SPEAKER_PATH = process.env.SPEAKER_PATH;
+
+const speaker_name = SPEAKER_PATH.split('/').pop().slice(0, -5);
+
+const privateKey = fs.readFileSync(VONAGE_APPLICATION_PRIVATE_KEY_PATH);
+
 SERVER_URL = process.env.SERVER_URL;
 DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
 
 const NGROK_URL = process.env.NGROK_URL;
-// const live = deepgram
+
+const { Vonage } = require('@vonage/server-sdk');
+
+const vonage = new Vonage({
+    apiKey: VONAGE_API_KEY,
+    apiSecret: VONAGE_API_SECRET,
+    applicationId: VONAGE_APPLICATION_ID,
+    privateKey: privateKey
+}, { debug: true });
 
 
 const app = express();
@@ -24,6 +44,9 @@ app.get('/', (req, res) => {
 app.post('/answer', (req, res) => {
     log(`Answering call`, req.body);
     const ncco = [
+        {
+            "action": "record"
+        },
         {
             "action": "connect",
             "from": req.body['to'],
@@ -41,8 +64,36 @@ app.post('/answer', (req, res) => {
 
 app.post('/event', (req, res) => {
     log(`Event status`, req.body['status']);
-    // res.send(200);
+
+    if (req.body.recording_url) {
+        const recording_url = req.body.recording_url;
+        const fileId = req.body.recording_uuid;
+        const recordingsDirPath = path.join(__dirname, 'recordings');
+        const filePath = path.join(recordingsDirPath, `${speaker_name}_${fileId}.mp3`);
+
+        fs.mkdir(recordingsDirPath, { recursive: true }, (err) => {
+            if (err) {
+                return console.error('Failed to create directory:', err);
+            }
+
+            // Directory is now ensured to exist, proceed to download and save the recording  
+            vonage.voice.downloadRecording(recording_url, filePath, (err, res) => {
+                if (err) {
+                    console.error(err);
+                } else {
+                    console.log(`Recording saved to ${filePath}`);
+                }
+            });
+        });
+    }
 })
+
+// app.post('/recordings', (req, res) => {
+//     const recording_url = req.body.recording_url;
+//     console.log(`Recording URL = ${recording_url}`);
+
+//     res.status(204).send();
+// })
 
 app.ws('/socket', function (ws, req) {
     log(`Socket connected`);

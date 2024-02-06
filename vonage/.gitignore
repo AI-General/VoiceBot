@@ -131,3 +131,5 @@ dist
 
 # Credential
 voiceai.key
+
+src/recordings/*

@@ -35,6 +35,11 @@ async function makeCall() {
         },
         ncco: [
             {
+                "action": "record",
+                "eventUrl": [`https://${NGROK_URL}/recordings`]
+                // "transcription": {}
+            },
+            {
                 "action": "connect",
                 "from": VONAGE_NUMBER,
                 "endpoint": [
