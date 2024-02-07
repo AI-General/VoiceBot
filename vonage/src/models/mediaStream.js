@@ -124,39 +124,41 @@ class MediaStream {
         console.log("isPlaying: True");
         // const speaker = require(process.env.SPEAKER);
         // console.log("sending audio stream: ", text);
-        // const voiceId = this.voice ? this.voice : '21m00Tcm4TlvDq8ikWAM'; // Replace with your voiceId
+        const voiceId = this.voice ? this.voice : '21m00Tcm4TlvDq8ikWAM'; // Replace with your voiceId
         let response;
-        // const Elevenlabs_Key = process.env.XI_API_KEY;
+        const Elevenlabs_Key = process.env.XI_API_KEY;
         try {
-            // response = await axios({
-            //     method: "post",
-            //     url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=4`,
-            //     headers: {
-            //         "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
-            //     },
-            //     // query: {
-            //     //     output_format: "pcm_16000",
-            //     // },
-            //     data: {
-            //         text: text,
-            //         model_id: "eleven_monolingual_v1",
-            //         voice_settings: {
-            //             stability: 0.15, similarity_boost: 0.5
-            //         },
-            //     },
-            //     responseType: "stream",
-            // });
-            let data = speaker;
-            data["text"] = text;
-            data["language"] = "en";
-            data["stream_chunk_size"] = 20;
-            // console.log("data: ", data);
+            // console.time("xtts");
             response = await axios({
                 method: "post",
-                url: `${xTTS_server_url}/tts_stream`,
-                data: data,
-                responseType: "stream"
-            })
+                url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=4`,
+                headers: {
+                    "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
+                },
+                // query: {
+                //     output_format: "pcm_16000",
+                // },
+                data: {
+                    text: text,
+                    model_id: "eleven_monolingual_v1",
+                    voice_settings: {
+                        stability: 0.15, similarity_boost: 0.5
+                    },
+                },
+                responseType: "stream",
+            });
+            // let data = speaker;
+            // data["text"] = text;
+            // data["language"] = "en";
+            // data["stream_chunk_size"] = 20;
+            // // console.log("data: ", data);
+            // console.time("xtts");
+            // response = await axios({
+            //     method: "post",
+            //     url: `${xTTS_server_url}/tts_stream`,
+            //     data: data,
+            //     responseType: "stream"
+            // })
         } catch (err) {
             log("ERROR: ", err);
         }
@@ -176,12 +178,13 @@ class MediaStream {
             .on("end", () => {
                 // console.log('Conversion to WAV completed.');
             })
-            .on("error", (err) => log("error: ", +err));
+            .on("error", (err) => log("error: ", err));
 
 
         let buffer = Buffer.alloc(0);
         // Handle each chunk of data, convert to base64, and send as a media event
         outputWav.on("data", (chunk) => {
+            // console.timeEnd("xtts");
             this.isPlaying = true;
             // console.log("in stream - isPlaying = True");
             buffer = Buffer.concat([buffer, chunk]);

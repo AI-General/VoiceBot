@@ -34,11 +34,11 @@ async function makeCall() {
             number: VONAGE_NUMBER
         },
         ncco: [
-            {
-                "action": "record",
-                "eventUrl": [`https://${NGROK_URL}/recordings`]
-                // "transcription": {}
-            },
+            // {
+            //     "action": "record",
+            //     "eventUrl": [`https://${NGROK_URL}/recordings`]
+            //     // "transcription": {}
+            // },
             {
                 "action": "connect",
                 "from": VONAGE_NUMBER,
