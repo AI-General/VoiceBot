@@ -33,24 +33,26 @@ async function makeCall() {
             type: 'phone',
             number: VONAGE_NUMBER
         },
-        ncco: [
-            {
-                "action": "record",
-                "eventUrl": [`https://${NGROK_URL}/recordings`]
-                // "transcription": {}
-            },
-            {
-                "action": "connect",
-                "from": VONAGE_NUMBER,
-                "endpoint": [
-                    {
-                        "type": "websocket",
-                        "uri": `wss://${NGROK_URL}/socket`,
-                        // "content-type": "audio/l16;rate=8000",
-                    }
-                ]
-            }
-        ]
+        // ncco: [
+        //     {
+        //         "action": "record",
+        //         "eventUrl": [`https://${NGROK_URL}/recordings`]
+        //         // "transcription": {}
+        //     },
+        //     {
+        //         "action": "connect",
+        //         "from": VONAGE_NUMBER,
+        //         "endpoint": [
+        //             {
+        //                 "type": "websocket",
+        //                 "uri": `wss://${NGROK_URL}/socket`,
+        //                 // "content-type": "audio/l16;rate=8000",
+        //             }
+        //         ]
+        //     }
+        // ]
+        answerUrl: [`https://${NGROK_URL}/answer`],
+        answerMethod: 'POST'
     })
         .then(resp => console.log(resp))
         .catch(err => console.error(err));

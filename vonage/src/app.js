@@ -42,7 +42,8 @@ app.get('/', (req, res) => {
 });
 
 app.post('/answer', (req, res) => {
-    log(`Answering call`, req.body);
+    // log(`Answering call`, req.body);
+    const call_id = req.body.uuid;
     const ncco = [
         {
             "action": "record"
@@ -53,7 +54,7 @@ app.post('/answer', (req, res) => {
             "endpoint": [
                 {
                     "type": "websocket",
-                    "uri": `wss://${NGROK_URL}/socket`,
+                    "uri": `wss://${NGROK_URL}/socket?call_id=${call_id}`,
                     // "content-type": "audio/l16;rate=8000",
                 }
             ]
@@ -97,7 +98,9 @@ app.post('/event', (req, res) => {
 
 app.ws('/socket', function (ws, req) {
     log(`Socket connected`);
-    new MediaStream(ws);
+    const call_id = req.query.call_id;
+    console.log("Call ID: ", call_id);
+    new MediaStream(ws, call_id);
 })
 
 const PORT = process.env.PORT || 3000;
