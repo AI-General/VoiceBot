@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "node src/test/make-call-ncco.js"
+    "test": "node src/test/make-call-ncco.js",
+    "prompt-test": "node src/test/prompt.js"
   },
   "author": "",
   "license": "ISC",
