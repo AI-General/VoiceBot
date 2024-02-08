@@ -29,9 +29,10 @@ const xTTS_server_url = process.env.XTTS_SERVER_URL;
 // }
 
 class MediaStream {
-    constructor(connection) {
+    constructor(connection, call_id) {
         console.log('1');
         this.connection = connection;
+        this.call_id = call_id;
         this.firstMessage = {};
         this.isPlaying = false;
         this.intermediateTranscript = "";
