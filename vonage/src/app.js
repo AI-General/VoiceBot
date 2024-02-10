@@ -44,22 +44,42 @@ app.get('/', (req, res) => {
 app.post('/answer', (req, res) => {
     // log(`Answering call`, req.body);
     const call_id = req.body.uuid;
-    const ncco = [
-        {
-            "action": "record"
-        },
-        {
-            "action": "connect",
-            "from": req.body['to'],
-            "endpoint": [
-                {
-                    "type": "websocket",
-                    "uri": `wss://${NGROK_URL}/socket?call_id=${call_id}`,
-                    // "content-type": "audio/l16;rate=8000",
-                }
-            ]
-        }
-    ];
+    let ncco;
+    if (req.query?.direction === 'outbound') {
+        ncco = [
+            // {
+            //     "action": "record"
+            // },
+            {
+                "action": "connect",
+                "from": req.body['from'],
+                "endpoint": [
+                    {
+                        "type": "websocket",
+                        "uri": `wss://${NGROK_URL}/socket?call_id=${call_id}`,
+                        // "content-type": "audio/l16;rate=8000",
+                    }
+                ]
+            }
+        ];
+    } else {
+        ncco = [
+            // {
+            //     "action": "record"
+            // },
+            {
+                "action": "connect",
+                "from": req.body['to'],
+                "endpoint": [
+                    {
+                        "type": "websocket",
+                        "uri": `wss://${NGROK_URL}/socket?call_id=${call_id}`,
+                        // "content-type": "audio/l16;rate=8000",
+                    }
+                ]
+            }
+        ];
+    }
     res.json(ncco);
 })
 

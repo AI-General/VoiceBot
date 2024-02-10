@@ -1,5 +1,6 @@
 require('dotenv').config()
 const fs = require('fs')
+// const { v4: uuidv4 } = require("uuid");
 
 const TO_NUMBER = process.env.TO_NUMBER
 const VONAGE_NUMBER = process.env.VONAGE_NUMBER
@@ -23,8 +24,11 @@ const vonage = new Vonage({
 })
 
 console.log(NGROK_URL)
+// const call_id = uuidv4();
+// console.log(call_id);
 async function makeCall() {
     vonage.voice.createOutboundCall({
+        // uuid: call_id,
         to: [{
             type: 'phone',
             number: TO_NUMBER //13308798656, 15087949928
@@ -34,11 +38,11 @@ async function makeCall() {
             number: VONAGE_NUMBER
         },
         // ncco: [
-        //     {
-        //         "action": "record",
-        //         "eventUrl": [`https://${NGROK_URL}/recordings`]
-        //         // "transcription": {}
-        //     },
+        //     // {
+        //     //     "action": "record",
+        //     //     "eventUrl": [`https://${NGROK_URL}/recordings`]
+        //     //     // "transcription": {}
+        //     // },
         //     {
         //         "action": "connect",
         //         "from": VONAGE_NUMBER,
@@ -51,7 +55,7 @@ async function makeCall() {
         //         ]
         //     }
         // ]
-        answerUrl: [`https://${NGROK_URL}/answer`],
+        answerUrl: [`https://${NGROK_URL}/answer?direction=outbound`],
         answerMethod: 'POST'
     })
         .then(resp => console.log(resp))
