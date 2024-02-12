@@ -39,7 +39,7 @@ RESPONSE FORMAT INSTRUCTIONS [IMPORTANT]
 You response should be following structure.
 
 rude: bool \\\\ true or false, if the user is rude or not
-transfer: bool \\\\ true or false, if the requirements have been met or not. It should be true at the end of the conversation
+transfer: bool \\\\ true or false, if the requirements have been met or not. It should be true at the end of the conversation or the debt load is $4,000 or greater.
 response: string \\\\ The response to the user.
 
 Here are some examples of responses:

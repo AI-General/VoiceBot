@@ -1,13 +1,28 @@
 const dotenv = require('dotenv');
+const fs = require('fs')
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
 const { pipeline, Transform } = require("node:stream");
 const { default: axios } = require("axios");
 const stream = require("stream");
 const ffmpeg = require("fluent-ffmpeg");
+const { Vonage } = require('@vonage/server-sdk');
+
 const { Agent } = require('../models/agent.js');
 const { log } = require('../utils/log.js');
 
 dotenv.config();
+const VONAGE_API_KEY = process.env.VONAGE_API_KEY
+const VONAGE_API_SECRET = process.env.VONAGE_API_SECRET
+const VONAGE_APPLICATION_ID = process.env.VONAGE_APPLICATION_ID
+const VONAGE_APPLICATION_PRIVATE_KEY_PATH = process.env.VONAGE_APPLICATION_PRIVATE_KEY_PATH
+const privateKey = fs.readFileSync(VONAGE_APPLICATION_PRIVATE_KEY_PATH);
+const vonage = new Vonage({
+    apiKey: VONAGE_API_KEY,
+    apiSecret: VONAGE_API_SECRET,
+    applicationId: VONAGE_APPLICATION_ID,
+    privateKey: privateKey,
+});
+
 const chunkDuration = 20; // 20ms
 const sampleRate = 16000; // 16kHz
 const bytesPerSample = 2; // 16-bit audio, so 2 bytes per sample
@@ -17,6 +32,10 @@ console.log(process.env.SPEAKER_PATH)
 const speaker = require(`../../${process.env.SPEAKER_PATH}`);
 const xTTS_server_url = process.env.XTTS_SERVER_URL;
 
+const TO_NUMBER = process.env.TO_NUMBER
+const VONAGE_NUMBER = process.env.VONAGE_NUMBER
+const VONAGE_NUMBER2 = process.env.VONAGE_NUMBER2
+const BOSS_NUMBER = process.env.BOSS_NUMBER;
 // function sendWebSocketMessage(ws, message) {
 //     return new Promise((resolve, reject) => {
 //         ws.send(message, (error) => {
@@ -226,7 +245,7 @@ class MediaStream {
                     "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
                 }, method: "POST", body: JSON.stringify({
                     model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, // stop: ["\n\n", "[INST]", '</s>'],
-                    frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1, 
+                    frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1,
                 }),
             });
 
@@ -290,7 +309,7 @@ class MediaStream {
                     "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
                 }, method: "POST", body: JSON.stringify({
                     model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, stop: ["[", '</s>', "\n\n"],
-                    frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1, 
+                    frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1,
                 }),
             });
 
@@ -355,7 +374,7 @@ class MediaStream {
                 } else {
                     log('completed');
                 }
-            },);            
+            },);
         }
 
         const waitToFinish = async () => {
@@ -375,8 +394,34 @@ class MediaStream {
             log(string);
             fullResp += string;
             log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            await this.sendAudioStream(string);
-            await waitToFinish();
+            // this.transfer();
+            if (string.toLowerCase().startsWith('rude')) {
+                const rude = string.toLowerCase().slice(6).startsWith('true');
+                console.log("Rude: ", rude);
+                if (rude) {
+                    console.log("RUDE: HANGING UP");
+                    this.hangup();
+                }
+                // console.log("Rude: ", rude);
+            } else if (string.toLowerCase().startsWith('transfer')) {
+                const transfer = string.toLowerCase().slice(10).startsWith('true');
+                if (transfer) {
+                    console.log("TRANSFER: HANGING UP");
+                    this.transfer();
+                }
+                // console.log("Transfer: ", transfer);
+            } else if (string.toLowerCase().startsWith('response')) {
+                // console.log("Response: ", string.slice(10));
+                await this.sendAudioStream(string.slice(10));
+                await waitToFinish();
+                // fullResp += string.slice(10);
+            } else {
+                // console.log("Response: " + string.slice(1));
+                await this.sendAudioStream(string.slice(1));
+                await waitToFinish();
+                // fullResp += string;
+            }
+
         }
         this.agent.update_message(fullResp);
         // this.isPlaying = false;
@@ -458,6 +503,47 @@ class MediaStream {
         return deepgram;
     };
 
+    hangup() {
+        vonage.voice.hangupCall(this.call_id, (err, res) => {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+            }
+        });
+        // vonage.call.update(this.call_id, {
+        //     action: 'hangup'
+        // }, (err, res) => {
+        //     if (err) {
+        //         console.error(err);
+        //     } else {
+        //         console.log(res);
+        //     }
+        // })
+    };
+
+    transfer() {
+        vonage.voice.transferCallWithNCCO(this.call_id, [
+            {
+                action: 'talk',
+                text: 'Hello, you are being connected, please wait...'
+            },
+            {
+                "action": "connect",
+                "from": VONAGE_NUMBER,
+                "endpoint": [{
+                    "type": "phone",
+                    "number": BOSS_NUMBER
+                }]
+            }
+        ], (err, res) => {
+                if (err) {
+                    console.error(err);
+                } else {
+                    console.log(res);
+                }
+            });
+    };
 }
 
 module.exports = { MediaStream }
