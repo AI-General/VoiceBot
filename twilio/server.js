@@ -466,7 +466,7 @@ class MediaStream {
                         this.intermediateTranscript = this.intermediateTranscript + data?.channel?.alternatives[0]?.transcript;
                         log('intermediateTranscript', this.intermediateTranscript);
                     }
-                    if (data?.is_final && data?.speech_final && data?.channel?.alternatives[0]?.transcript && !this.isPlaying) {
+                    if (data?.is_final && data?.speech_final && data?.channel?.alternatives[0]?.transcript && !this.isPlaying && this.agent.messages[this.agent.messages.length - 1]['role'] === 'assistant') {
                         // transcript_byte(this.call_id, 'human', this.intermediateTranscript)
                         log("Intermediate Transcript Process", this.intermediateTranscript);
                         handleTranscription(this.intermediateTranscript);
