@@ -44,6 +44,7 @@ app.get('/', (req, res) => {
 app.post('/answer', (req, res) => {
     // log(`Answering call`, req.body);
     const call_id = req.body.uuid;
+    log(`Answering call`, call_id);
     let ncco;
     if (req.query?.direction === 'outbound') {
         ncco = [
