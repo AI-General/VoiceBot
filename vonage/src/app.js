@@ -85,7 +85,11 @@ app.post('/answer', (req, res) => {
 })
 
 app.post('/event', (req, res) => {
-    log(`Event status`, req.body['status']);
+    log(`Event ${req.body['from']} -> ${req.body['to']}`, req.body['status']);
+
+    if (req.body['status'] === 'rejected') {
+        console.log(req.body);
+    }
 
     if (req.body.recording_url) {
         const recording_url = req.body.recording_url;
