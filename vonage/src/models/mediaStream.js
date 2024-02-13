@@ -149,36 +149,39 @@ class MediaStream {
         const Elevenlabs_Key = process.env.XI_API_KEY;
         try {
             // console.time("xtts");
-            response = await axios({
-                method: "post",
-                url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=4`,
-                headers: {
-                    "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
-                },
-                // query: {
-                //     output_format: "pcm_16000",
-                // },
-                data: {
-                    text: text,
-                    model_id: "eleven_monolingual_v1",
-                    voice_settings: {
-                        stability: 0.15, similarity_boost: 0.5
-                    },
-                },
-                responseType: "stream",
-            });
-            // let data = speaker;
-            // data["text"] = text;
-            // data["language"] = "en";
-            // data["stream_chunk_size"] = 20;
-            // // console.log("data: ", data);
-            // console.time("xtts");
             // response = await axios({
             //     method: "post",
-            //     url: `${xTTS_server_url}/tts_stream`,
-            //     data: data,
-            //     responseType: "stream"
-            // })
+            //     url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=4`,
+            //     headers: {
+            //         "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
+            //     },
+            //     // query: {
+            //     //     output_format: "pcm_16000",
+            //     // },
+            //     data: {
+            //         text: text,
+            //         model_id: "eleven_monolingual_v1",
+            //         voice_settings: {
+            //             stability: 0.15, similarity_boost: 0.5
+            //         },
+            //     },
+            //     responseType: "stream",
+            // });
+            let data = speaker;
+            data["text"] = text;
+            data["language"] = "en";
+            data["stream_chunk_size"] = 20;
+            // console.log("data: ", data);
+            // console.time("xtts");
+            // let timestamp = Date.now();
+            // console.log("xTTS request timestamp: ", timestamp);
+
+            response = await axios({
+                method: "post",
+                url: `${xTTS_server_url}/tts_stream`,
+                data: data,
+                responseType: "stream"
+            })
         } catch (err) {
             log("ERROR: ", err);
         }
@@ -187,23 +190,26 @@ class MediaStream {
 
         const input = response.data;
 
-        const outputWav = new stream.PassThrough();
-        // Conversion of the MP3 stream to Mulaw (µ-law) format
-        ffmpeg(input)
-            .audioFrequency(16000)
-            .audioChannels(1)
-            .audioCodec("pcm_s16le")
-            .format("wav")
-            .pipe(outputWav)
-            .on("end", () => {
-                // console.log('Conversion to WAV completed.');
-            })
-            .on("error", (err) => log("error: ", err));
+        // const outputWav = new stream.PassThrough();
+        // // Conversion of the MP3 stream to Mulaw (µ-law) format
+        // ffmpeg(input)
+        //     .audioFrequency(16000)
+        //     .audioChannels(1)
+        //     .audioCodec("pcm_s16le")
+        //     .format("wav")
+        //     .pipe(outputWav)
+        //     .on("end", () => {
+        //         // console.log('Conversion to WAV completed.');
+        //     })
+        //     .on("error", (err) => log("error: ", err));
 
 
         let buffer = Buffer.alloc(0);
         // Handle each chunk of data, convert to base64, and send as a media event
-        outputWav.on("data", (chunk) => {
+        input.on("data", (chunk) => {
+            // let timestamp = Date.now();
+            // console.log("message received timestamp: ", timestamp);
+
             // console.timeEnd("xtts");
             this.isPlaying = true;
             // console.log("in stream - isPlaying = True");
@@ -220,7 +226,7 @@ class MediaStream {
         });
 
         // On stream end, stop playing and transcribing if it is the second stream
-        outputWav.on("end", () => {
+        input.on("end", () => {
             this.isPlaying = false;
             console.log("Audio Stream ended - isPlaying = False");
         });
