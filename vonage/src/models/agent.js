@@ -60,6 +60,14 @@ transfer: true
 response: Just a minute, I'll connect soon.
 
 
+NEVER TYPE OUT A NUMBER OR SYMBOL, INSTEAD ALWAYS TYPE IT IN WORD FORM. [IMPORTANT]
+----------------------------------------
+Here is an example:
+- BAD: $100,000
+- GOOD: one hundred thousand dollars
+- BAD: 30%
+- GOOD: thirty persent
+
 Hello
 `;
         this.messages = [

@@ -152,25 +152,25 @@ class MediaStream {
         const Elevenlabs_Key = process.env.XI_API_KEY;
         try {
             // Elevenlabs
-            // console.time("xtts");
-            // response = await axios({
-            //     method: "post",
-            //     url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=pcm_16000&optimize_streaming_latency=4`,
-            //     headers: {
-            //         "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
-            //     },
-            //     // query: {
-            //     //     output_format: "pcm_16000",
-            //     // },
-            //     data: {
-            //         text: text,
-            //         model_id: "eleven_monolingual_v1",
-            //         voice_settings: {
-            //             stability: 0.15, similarity_boost: 0.5
-            //         },
-            //     },
-            //     responseType: "stream",
-            // });
+            console.time("xtts");
+            response = await axios({
+                method: "post",
+                url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=pcm_16000&optimize_streaming_latency=4`,
+                headers: {
+                    "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
+                },
+                // query: {
+                //     output_format: "pcm_16000",
+                // },
+                data: {
+                    text: text,
+                    model_id: "eleven_monolingual_v1",
+                    voice_settings: {
+                        stability: 0.15, similarity_boost: 0.5
+                    },
+                },
+                responseType: "stream",
+            });
             
             // xTTS
             // let data = speaker;
@@ -190,12 +190,12 @@ class MediaStream {
             // })
 
             // Pheme
-            response = await axios({
-                method: "post",
-                url: `http://127.0.0.1:7000/synthesize`,
-                data: { text: text, voice: "POD0000004393_S0000029" }, // POD0000004393_S0000029, male_voice, halle
-                responseType: "stream"
-            })
+            // response = await axios({
+            //     method: "post",
+            //     url: `http://127.0.0.1:7000/synthesize`,
+            //     data: { text: text, voice: "POD0000004393_S0000029" }, // POD0000004393_S0000029, male_voice, halle
+            //     responseType: "stream"
+            // })
 
         } catch (err) {
             log("ERROR: ", err);
@@ -230,7 +230,7 @@ class MediaStream {
             this.isPlaying = true;
             // console.log("in stream - isPlaying = True");
             buffer = Buffer.concat([buffer, chunk]);
-            console.log("Chunk Length is ", chunk.length);
+            // console.log("Chunk Length is ", chunk.length);
             while (buffer.length >= bytesPerChunk) {
                 count++;
                 const currentChunk = buffer.slice(0, bytesPerChunk);
@@ -247,8 +247,8 @@ class MediaStream {
         input.on("end", async () => {
             const processingTime = Date.now() - startTime;
             const additionalTime = (20 * count) - processingTime;
-            console.log("additionalTime: ", additionalTime);
-            console.log("count: ", count);
+            // console.log("additionalTime: ", additionalTime);
+            // console.log("count: ", count);
             await wait(additionalTime);
             this.isPlaying = false;
             console.log("Audio Stream ended - isPlaying = False");
@@ -442,25 +442,25 @@ class MediaStream {
                 // console.log("Transfer: ", transfer);
             } else if (string.toLowerCase().startsWith('response')) {
                 // console.log("Response: ", string.slice(10));
-                // await this.sendAudioStream(string.slice(10));
-                ttsString = string.slice(10);
+                await this.sendAudioStream(string.slice(10));
+                // ttsString = string.slice(10);
                 // await waitToFinish();
                 // fullResp += string.slice(10);
             } else {
                 // console.log("Response: " + string.slice(1));
-                // await this.sendAudioStream(string.slice(1));
-                ttsString += string;
+                await this.sendAudioStream(string.slice(1));
+                // ttsString += string;
                 // await waitToFinish();
                 // fullResp += string;
             }
 
         }
 
-        console.log("##############################################");
-        console.log(ttsString);
-        console.log("##############################################");
-        await this.sendAudioStream(ttsString);
-        await waitToFinish();
+        // console.log("##############################################");
+        // console.log(ttsString);
+        // console.log("##############################################");
+        // await this.sendAudioStream(ttsString);
+        // await waitToFinish();
 
         // this.agent.update_message(fullResp);
         this.agent.update_message(fullResp);

@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "test": "node src/test/make-call-ncco.js",
-    "multi-user": "node src/test/multi_user.js",
+    "multi-test": "node src/test/multi_user.js",
     "prompt-test": "node src/test/prompt.js"
   },
   "author": "",

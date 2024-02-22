@@ -46,7 +46,7 @@ RESPONSE FORMAT INSTRUCTIONS [IMPORTANT]
 You response should be following structure.
 
 rude: bool \\\\ true or false, if the user is rude or not
-transfer: bool \\\\ true or false, if the requirements have been met or not. It should be true at the end of the conversation
+transfer: bool \\\\ true or false, if the requirements have been met or not. It should be true at the end of the conversation or the debt load is $4,000 or greater.
 response: string \\\\ The response to the user.
 
 Here are some examples of responses:
@@ -67,6 +67,14 @@ transfer: true
 response: Just a minute, I'll connect soon.
 
 
+NEVER TYPE OUT A NUMBER OR SYMBOL, INSTEAD ALWAYS TYPE IT IN WORD FORM. [IMPORTANT]
+----------------------------------------
+Here is an example:
+- BAD: $100,000
+- GOOD: one hundred thousand dollars
+- BAD: 30%
+- GOOD: thirty persent
+
 Hello
 `
 
@@ -80,16 +88,16 @@ transfer: false
 response: Hi there! How can I assist you today?`},
     { 'role': 'user', 'content': 'I missed a call from you guys.' },
     // {'role': 'user', 'content': 'You are shit, you are stupid'},
-//     {
-//         'role': 'assistant', 'content': `rude: false
-// transfer: false
-// response: Hello! Yes, we did reach out to you earlier regarding our hardship program. May I ask if you currently owe $4,000 or more in unsecured debt, such as credit card bills, medical bills, collections accounts, or personal loans?`},
-//     { 'role': 'user', 'content': 'yeah, right' },
+    {
+        'role': 'assistant', 'content': `rude: false
+transfer: false
+response: Our outreach department was reaching out regarding our hardship program. May I ask if you currently owe four thousand dollars or more in unsecured debts, such as credit card bills, medical bills, collections accounts, or personal loans?`},
+    // { 'role': 'user', 'content': 'yeah, right' },
 //     {
 //         'role': 'assistant', 'content': `rude: false
 // transfer: false
 // response: I see. Let me clarify, do you owe $4,000 or more in debts like credit cards, medical bills, collections accounts, or personal loans?`},
-//     { 'role': 'user', 'content': 'Yeah, I confirmed that' },
+    // { 'role': 'user', 'content': 'Yeah, I confirmed that' },
 //         {'role': 'assistant', 'content': `rude: false
 //     transfer: false
 //     response: Great! I'll need a few details from you to proceed. Could I have your first and last name, please? Also, what's the best contact number for you?`},
@@ -175,14 +183,14 @@ async function invokeStreamProcess() {
 
         if (string.toLowerCase().startsWith('rude')) {
             const rude = string.toLowerCase().slice(6).startsWith('true');
-            console.log("Rude: ", rude);
+            // console.log("Rude: ", rude);
         } else if (string.toLowerCase().startsWith('transfer')) {
             const transfer = string.toLowerCase().slice(10).startsWith('true');
-            console.log("Transfer: ", transfer);
+            // console.log("Transfer: ", transfer);
         } else if (string.toLowerCase().startsWith('response')) {
-            console.log("Response: ", string.slice(10));
+            // console.log("Response: ", string.slice(10));
         } else {
-            console.log("Response: " + string.slice(1));
+            // console.log("Response: " + string.slice(1));
         }
 
         // if (string.startsWith('<<action_block>>') || string.startsWith('//////////')) {
