@@ -75,7 +75,7 @@ class MediaStream {
         console.log('6');
         log(`Media WS: created`);
 
-        this.sendAudioStream("Hello, Step Enrollment Center. My name is Deidra. How can I help you today?");
+        this.sendAudioStream("Hello, Debt Enrollment Center. My name is Tammy. How can I help you today?");
     }
 
     processMessage(message) {
@@ -152,7 +152,7 @@ class MediaStream {
         const Elevenlabs_Key = process.env.XI_API_KEY;
         try {
             // Elevenlabs
-            console.time("xtts");
+            // console.time("xtts");
             response = await axios({
                 method: "post",
                 url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=pcm_16000&optimize_streaming_latency=4`,
@@ -273,7 +273,7 @@ class MediaStream {
                 headers: {
                     "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
                 }, method: "POST", body: JSON.stringify({
-                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, // stop: ["\n\n", "[INST]", '</s>'],
+                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, stop: ["\n\n", "[INST]", '</s>', '?'],
                     frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1,
                 }),
             });
@@ -337,7 +337,7 @@ class MediaStream {
                 headers: {
                     "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
                 }, method: "POST", body: JSON.stringify({
-                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, stop: ["[", '</s>', "\n\n"],
+                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, stop: ["[", '</s>', "\n\n", '\\', '\*', "~"],
                     frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1,
                 }),
             });
@@ -420,39 +420,42 @@ class MediaStream {
         let ttsString = '';
         for await (const value of generator) {
             const string = value.toString();
-            // log("~~~~~~~~~~~~ String ~~~~~~~~~~~~");
-            // log(string);
-            // log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            fullResp += string;
+            let cleanedString = string.replace(/["']/g, '');
+            log("~~~~~~~~~~~~ String ~~~~~~~~~~~~");
+            log(cleanedString);
+            log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+            fullResp += cleanedString;
+            await this.sendAudioStream(cleanedString);
+            await waitToFinish();
             // this.transfer();
-            if (string.toLowerCase().startsWith('rude')) {
-                const rude = string.toLowerCase().slice(6).startsWith('true');
-                console.log("Rude: ", rude);
-                if (rude) {
-                    console.log("RUDE: HANGING UP");
-                    this.hangup();
-                }
-                // console.log("Rude: ", rude);
-            } else if (string.toLowerCase().startsWith('transfer')) {
-                const transfer = string.toLowerCase().slice(10).startsWith('true');
-                if (transfer) {
-                    console.log("TRANSFER: HANGING UP");
-                    this.transfer();
-                }
-                // console.log("Transfer: ", transfer);
-            } else if (string.toLowerCase().startsWith('response')) {
-                // console.log("Response: ", string.slice(10));
-                await this.sendAudioStream(string.slice(10));
-                // ttsString = string.slice(10);
-                // await waitToFinish();
-                // fullResp += string.slice(10);
-            } else {
-                // console.log("Response: " + string.slice(1));
-                await this.sendAudioStream(string.slice(1));
-                // ttsString += string;
-                // await waitToFinish();
-                // fullResp += string;
-            }
+            // if (string.toLowerCase().startsWith('rude')) {
+            //     const rude = string.toLowerCase().slice(6).startsWith('true');
+            //     console.log("Rude: ", rude);
+            //     if (rude) {
+            //         console.log("RUDE: HANGING UP");
+            //         this.hangup();
+            //     }
+            //     // console.log("Rude: ", rude);
+            // } else if (string.toLowerCase().startsWith('transfer')) {
+            //     const transfer = string.toLowerCase().slice(10).startsWith('true');
+            //     if (transfer) {
+            //         console.log("TRANSFER: HANGING UP");
+            //         this.transfer();
+            //     }
+            //     // console.log("Transfer: ", transfer);
+            // } else if (string.toLowerCase().startsWith('response')) {
+            //     // console.log("Response: ", string.slice(10));
+            //     await this.sendAudioStream(string.slice(10));
+            //     // ttsString = string.slice(10);
+            //     // await waitToFinish();
+            //     // fullResp += string.slice(10);
+            // } else {
+            //     // console.log("Response: " + string.slice(1));
+            //     await this.sendAudioStream(string.slice(1));
+            //     // ttsString += string;
+            //     // await waitToFinish();
+            //     // fullResp += string;
+            // }
 
         }
 
@@ -463,6 +466,7 @@ class MediaStream {
         // await waitToFinish();
 
         // this.agent.update_message(fullResp);
+        console.log("fullResp: ", fullResp);
         this.agent.update_message(fullResp);
         // this.isPlaying = false;
     }
@@ -566,7 +570,7 @@ class MediaStream {
         vonage.voice.transferCallWithNCCO(this.call_id, [
             {
                 action: 'talk',
-                text: 'Hello, you are being connected, please wait...'
+                text: 'We are transfering your call voice'
             },
             {
                 "action": "connect",
