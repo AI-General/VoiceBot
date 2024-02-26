@@ -8,7 +8,8 @@
     "dev": "nodemon src/app.js",
     "test": "node src/test/make-call-ncco.js",
     "multi-test": "node src/test/multi_user.js",
-    "prompt-test": "node src/test/prompt.js"
+    "prompt-test": "node src/test/prompt.js",
+    "rude-test": "node src/test/rude.js"
   },
   "author": "",
   "license": "ISC",

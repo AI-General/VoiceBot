@@ -133,12 +133,16 @@ class MediaStream {
     }
 
     async handleTranscript(transcript) {
-        this.isPlaying = true;
+        // this.isPlaying = true;
         log(`[Human]: `, transcript);
+
+        const isRude = await this.isRude(transcript);
+        if (isRude) {
+            this.hangup();
+            return;
+        };
         const prompt = await this.agent.ask(transcript);
         await this.invokeStreamProcess(prompt);
-        // console.log("isPlaying: False");
-        // this.isPlaying = false;
     }
 
     async sendAudioStream(text) {
@@ -467,6 +471,9 @@ class MediaStream {
 
         // this.agent.update_message(fullResp);
         console.log("fullResp: ", fullResp);
+        if (fullResp.includes("connect") && fullResp.includes("senior enrollment officer")) {
+            this.transfer();
+        }
         this.agent.update_message(fullResp);
         // this.isPlaying = false;
     }
@@ -588,6 +595,43 @@ class MediaStream {
                 }
             });
     };
+
+    async isRude(sentence) {
+        const prompt = [
+            { role: "user", content: `Tell me whether following sentence is a rude sentence or not. Answer must be True or False. \nSentence: I am not Johnson.` },
+            { role: "assistant", content: "False", },
+            { role: "user", content: "Sentence: like fuck you", },
+            { role: "assistant", content: "True", },
+            { role: "user", content: "Sentence: You are asshole", },
+            { role: "assistant", content: "True", },
+            { role: "user", content: `Sentence: ${sentence}`, },
+        ]
+
+        let response = await fetch(`${OpenAI_API_Base}/chat/completions`, {
+            headers: {
+                "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
+            },
+            method: "POST",
+            body: JSON.stringify({
+                model: LLM_MODEL,
+                messages: prompt,
+                temperature: 0,
+                max_tokens: 1,
+                stream: false, 
+            }),
+        });
+    
+        // console.log(response);
+        if (response.ok) { // Check if the request was successful
+            let jsonResponse = await response.json(); // Extract JSON data from the response
+            return jsonResponse.choices[0].message.content === "True"
+            // Use jsonResponse here - it contains the result you are looking for
+        } else {
+            // Handle HTTP errors
+            console.error("HTTP Error: " + response.status);
+            return false;
+        }
+    }
 }
 
 module.exports = { MediaStream }
