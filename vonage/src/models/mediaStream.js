@@ -424,13 +424,23 @@ class MediaStream {
         let ttsString = '';
         for await (const value of generator) {
             const string = value.toString();
-            let cleanedString = string.replace(/["']/g, '');
-            log("~~~~~~~~~~~~ String ~~~~~~~~~~~~");
-            log(cleanedString);
-            log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            fullResp += cleanedString;
-            await this.sendAudioStream(cleanedString);
-            await waitToFinish();
+            let cleanedString = string.replace(/["']/g, '').trim();
+            if (cleanedString) {
+                log("~~~~~~~~~~~~ String ~~~~~~~~~~~~");
+                log(cleanedString);
+                log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+                fullResp += cleanedString;
+                if (cleanedString.includes(['HANG UP'])){
+                    let hangupString = cleanedString.replace('HANG UP -', '').trim();
+                    if (hangupString) {
+                        await this.sendAudioStream(hangupString);
+                        await waitToFinish();
+                    }
+                    this.hangup();
+                };
+                await this.sendAudioStream(cleanedString);
+                await waitToFinish();
+            }
             // this.transfer();
             // if (string.toLowerCase().startsWith('rude')) {
             //     const rude = string.toLowerCase().slice(6).startsWith('true');
@@ -470,11 +480,15 @@ class MediaStream {
         // await waitToFinish();
 
         // this.agent.update_message(fullResp);
-        console.log("fullResp: ", fullResp);
-        if (fullResp.includes("connect") && fullResp.includes("senior enrollment officer")) {
-            this.transfer();
+        if (fullResp) {
+            console.log("fullResp: ", fullResp);
+            if (fullResp.includes("connect") && fullResp.includes("senior enrollment officer")) {
+                this.transfer();
+            }
+            this.agent.update_message(fullResp);
+        } else {
+            await this.invokeStreamProcess(prompt);
         }
-        this.agent.update_message(fullResp);
         // this.isPlaying = false;
     }
 
@@ -597,6 +611,9 @@ class MediaStream {
     };
 
     async isRude(sentence) {
+        const OpenAI_API_Base = process.env.OPENAI_API_BASE;
+        const OpenAI_API_Key = process.env.OPENAI_API_KEY;
+        const LLM_MODEL = process.env.LLM_MODEL;
         const prompt = [
             { role: "user", content: `Tell me whether following sentence is a rude sentence or not. Answer must be True or False. \nSentence: I am not Johnson.` },
             { role: "assistant", content: "False", },

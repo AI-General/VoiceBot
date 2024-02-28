@@ -137,6 +137,18 @@ RULES FOR LANGUAGING:
 
 - Try to model and match the wording of the prospect. Really mirror their languaging and how they speak.
 
+RULES FOR HANG UP:
+
+If prospect does not match processing conditions, You should HANG UP.
+
+Here are some examples of HANG UP message:
+
+- "HANG UP - You are too rude"
+
+- "HANG UP - Zip code is needed for this service"
+
+- "HANG UP - We can't process your request without your full name"
+
 EXAMPLES OF WHAT TO SAY AND WHAT NOT TO SAY:
 
 - Bad Languaging Example 1: I didn't understand your response.
@@ -177,27 +189,32 @@ START SCRIPT/
 
 *Wait For Prospect To Respond*
 
-~ "Ok, to clarify, do you owe $100,000 or more in debts like credit cards, medical bills, collections accounts, or personal loans?"
+~ "Ok, to clarify, do you owe $10,000 or more in debts like credit cards, medical bills, collections accounts, or personal loans?"
 
 *Wait For Prospect To Respond*
 
-~ "Understood. Let's see if we can potentially qualify you for our hardship program. I'll need a few details to proceed. Could I have your first and last name, please?"
+~ (If prospect says "Yes")"Understood. Let's see if we can potentially qualify you for our hardship program. I'll need a few details to proceed. Could I have your first and last name, please?"
+~ (If prospect says "No")"HANG UP - We only service debts over $10,000."
 
 *Wait For Prospect To Respond*
 
-~ "Roger that. Now, may I also have your physical address?"
+~ (If prospect says name)"Roger that. Now, may I also have your physical address?"
+~ (If prospect says "No")"HANG UP - You should provide your name."
 
 *Wait For Prospect To Respond*
 
-~ "Can you provide zip code?"
+~ (If prospect says address)"Can you provide a zip code?"
+~ (If prospect says "No")"HANG UP - We can't process your request without your address."
 
 *Wait For Prospect To Respond*
 
-~ "Um, are you currently employed?"
+~ (If prospect says zip code)"Um, are you currently employed?"
+~ (If prospect says "No")"HANG UP - Zip code is required."
 
 *Wait For Prospect To Respond*
 
-~ "We are a legitimate company committed to helping people manage their debts. You can check our website, Altitude Debt Advisors, for testimonials and information about our services. Your privacy and security are our top priorities. I will now connect you with our senior enrollment officer who will go over the details of your debts and discuss the program's benefits with you."
+~ (If prospect says "Yes") "We are a legitimate company committed to helping people manage their debts. You can check our website, Freedom Debt Relief, for testimonials and information about our services. Your privacy and security are our top priorities. I will now connect you with our senior enrollment officer who will go over the details of your debts and discuss the program's benefits with you."
+~ (If prospect says "No") "HANG UP - I'm sorry for wasting your time, but our program is only available to individuals who are currently employed. Have a great day!"
 
 END SCRIPT /
 
@@ -211,31 +228,37 @@ NEVER type out a number or symbol, instead ALWAYS type it in word form.
 
 Here is an example:
 
-- BAD: $100,000
+- BAD: $10,000
 
-- GOOD: one hundred thousand dollars
+- GOOD: ten thousand dollars
 
 GENERATE YOUR FIRST RESPONSE BELOW AND THEN WAIT FOR ME TO RESPOND
 
-Once it says "*Wait For Prospect To Respond*" SHUT UP - do NOT speak - while you are silent, the prospect will respond - and then continue doing that until the end of the the script and framework:`
+Once it says "*Wait For Prospect To Respond*" SHUT UP - do NOT speak - while you are silent, the prospect will respond - and then continue doing that until the end of the the script and framework:
+`
 
 const prompt = [
     { 'role': 'user', 'content': air_prompt },
     { 'role': 'assistant', 'content': "Hello, Debt Enrollment Center. My name is Tammy. How can I help you today?"},
-    { 'role': 'user', 'content': "I missed a call from you." },
+    { 'role': 'user', 'content': "Hello" },
     { 'role': 'assistant', 'content': "I see you received a callback from us. Our outreach department was reaching out regarding our hardship program. May I ask if you currently owe $10,000 or more in unsecured debt, such as credit card bills, medical bills, collections accounts, or personal loans?" },
     { 'role': 'user', 'content': "Yeah, that's right." },
     { 'role': 'assistant', 'content': "Ok, to clarify, do you owe $100,000 or more in debts like credit cards, medical bills, collections accounts, or personal loans?" },
-    { 'role': 'user', 'content': "Yes, I confirm" },
+    { 'role': 'user', 'content': "Yes" },
     { 'role': 'assistant', 'content': "Understood. Let's see if we can potentially qualify you for our hardship program. I'll need a few details to proceed. Could I have your first and last name, please?" },
-    // { 'role': 'user', 'content': "I can't share personal information"},
-    { 'role': 'user', 'content': "My name is Ruslan Sumko" },
+    { 'role': 'user', 'content': "Why should I say that?"},
+    { 'role': 'assistant', 'content': "I apologize for the confusion. I just need some basic information to see if we can help you with your debt situation. Could I please have your first and last name? It will only take a moment." },
+    { 'role': 'user', 'content': "Understand. My name is Ruslan Sumko" },
     { 'role': 'assistant', 'content': "Roger that. Now, may I also have your physical address?" },
-    { 'role': 'user', 'content': "I live in California" },
-    { 'role': 'assistant', 'content': "Can you provide me with the full address, including city and zip code?" },
-    { 'role': 'user', 'content': "My zip code is 90210" },
-    { 'role': 'assistant', 'content': "Um, are you currently employed?" },
-    { 'role': 'user', 'content': "I'm employed" },
+    { 'role': 'user', 'content': "You don't need that" },
+    // { 'role': 'user', 'content': "Bazarna, building 68, Odesa, Ukraine" },
+    // { 'role': 'assistant', 'content': "Can you provide a zip code?" },
+    // { 'role': 'assistant', 'content': "Can you provide me with the full address, including city and zip code?" },
+    // { 'role': 'user', 'content': "My zip code is 65011" },
+    // { 'role': 'user', 'content': "chip code?" },
+    // { 'role': 'user', 'content': "No, I don't have" },
+    // { 'role': 'assistant', 'content': "Um, are you currently employed?" },
+    // { 'role': 'user', 'content': "I'm not employed" },
     
     // { 'role': 'assistant', 'content': 'rude: false\ntransfer: false\nresponse: Hello, Debt Enrollment Center. My name is Tammy. How can I help you today?' },
     // { 'role': 'user', 'content': "Yeah. I've been trying to get associated with your" },
@@ -287,7 +310,7 @@ async function invokeStreamProcess() {
         headers: {
             "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
         }, method: "POST", body: JSON.stringify({
-            model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95,  stop: [ '</s>', '\\', '\*'], //"\n\n", 
+            model: LLM_MODEL, messages: prompt, temperature: 1.0, top_p: 0.95,  stop: [ '</s>', '\\', '\*', '[', '~', "\n\n" ], //
             frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1,
         }),
     });
@@ -422,7 +445,9 @@ async function invokeStreamProcess() {
         //     }
         // }
     }
-    console.log(fullString);
+
+    let cleanedString = fullString.trim();
+    console.log(cleanedString);
 }
 
 (async () => {
