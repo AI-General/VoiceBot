@@ -75,7 +75,7 @@ class MediaStream {
         console.log('6');
         log(`Media WS: created`);
 
-        this.sendAudioStream("Hello, Step Enrollment Center. My name is Deidra. How can I help you today?");
+        this.sendAudioStream("Hello, Debt Enrollment Center. My name is Tammy. How can I help you today?");
     }
 
     processMessage(message) {
@@ -133,12 +133,16 @@ class MediaStream {
     }
 
     async handleTranscript(transcript) {
-        this.isPlaying = true;
+        // this.isPlaying = true;
         log(`[Human]: `, transcript);
+
+        // const isRude = await this.isRude(transcript);
+        // if (isRude) {
+        //     this.hangup();
+        //     return;
+        // };
         const prompt = await this.agent.ask(transcript);
         await this.invokeStreamProcess(prompt);
-        // console.log("isPlaying: False");
-        // this.isPlaying = false;
     }
 
     async sendAudioStream(text) {
@@ -153,24 +157,24 @@ class MediaStream {
         try {
             // Elevenlabs
             // console.time("xtts");
-            // response = await axios({
-            //     method: "post",
-            //     url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=pcm_16000&optimize_streaming_latency=4`,
-            //     headers: {
-            //         "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
-            //     },
-            //     // query: {
-            //     //     output_format: "pcm_16000",
-            //     // },
-            //     data: {
-            //         text: text,
-            //         model_id: "eleven_monolingual_v1",
-            //         voice_settings: {
-            //             stability: 0.15, similarity_boost: 0.5
-            //         },
-            //     },
-            //     responseType: "stream",
-            // });
+            response = await axios({
+                method: "post",
+                url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=pcm_16000&optimize_streaming_latency=4`,
+                headers: {
+                    "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
+                },
+                // query: {
+                //     output_format: "pcm_16000",
+                // },
+                data: {
+                    text: text,
+                    model_id: "eleven_monolingual_v1",
+                    voice_settings: {
+                        stability: 0.15, similarity_boost: 0.5
+                    },
+                },
+                responseType: "stream",
+            });
             
             // xTTS
             // let data = speaker;
@@ -190,12 +194,12 @@ class MediaStream {
             // })
 
             // Pheme
-            response = await axios({
-                method: "post",
-                url: `http://127.0.0.1:7000/synthesize`,
-                data: { text: text, voice: "POD0000004393_S0000029" }, // POD0000004393_S0000029, male_voice, halle
-                responseType: "stream"
-            })
+            // response = await axios({
+            //     method: "post",
+            //     url: `http://127.0.0.1:7000/synthesize`,
+            //     data: { text: text, voice: "POD0000004393_S0000029" }, // POD0000004393_S0000029, male_voice, halle
+            //     responseType: "stream"
+            // })
 
         } catch (err) {
             log("ERROR: ", err);
@@ -230,7 +234,7 @@ class MediaStream {
             this.isPlaying = true;
             // console.log("in stream - isPlaying = True");
             buffer = Buffer.concat([buffer, chunk]);
-            console.log("Chunk Length is ", chunk.length);
+            // console.log("Chunk Length is ", chunk.length);
             while (buffer.length >= bytesPerChunk) {
                 count++;
                 const currentChunk = buffer.slice(0, bytesPerChunk);
@@ -247,8 +251,8 @@ class MediaStream {
         input.on("end", async () => {
             const processingTime = Date.now() - startTime;
             const additionalTime = (20 * count) - processingTime;
-            console.log("additionalTime: ", additionalTime);
-            console.log("count: ", count);
+            // console.log("additionalTime: ", additionalTime);
+            // console.log("count: ", count);
             await wait(additionalTime);
             this.isPlaying = false;
             console.log("Audio Stream ended - isPlaying = False");
@@ -273,7 +277,7 @@ class MediaStream {
                 headers: {
                     "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
                 }, method: "POST", body: JSON.stringify({
-                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, // stop: ["\n\n", "[INST]", '</s>'],
+                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, stop: ["\n\n", "[INST]", '</s>', '?'],
                     frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1,
                 }),
             });
@@ -337,7 +341,7 @@ class MediaStream {
                 headers: {
                     "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
                 }, method: "POST", body: JSON.stringify({
-                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, stop: ["[", '</s>', "\n\n"],
+                    model: LLM_MODEL, messages: prompt, temperature: 0.75, top_p: 0.95, stop: ["[", '</s>', "\n\n", '\\', '\*', "~"],
                     frequency_penalty: 0, presence_penalty: 0, max_tokens: 500, stream: true, n: 1,
                 }),
             });
@@ -418,52 +422,92 @@ class MediaStream {
         };
 
         let ttsString = '';
+        let connect = false;
         for await (const value of generator) {
             const string = value.toString();
-            // log("~~~~~~~~~~~~ String ~~~~~~~~~~~~");
-            // log(string);
-            // log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            fullResp += string;
-            // this.transfer();
-            if (string.toLowerCase().startsWith('rude')) {
-                const rude = string.toLowerCase().slice(6).startsWith('true');
-                console.log("Rude: ", rude);
-                if (rude) {
-                    console.log("RUDE: HANGING UP");
-                    this.hangup();
-                }
-                // console.log("Rude: ", rude);
-            } else if (string.toLowerCase().startsWith('transfer')) {
-                const transfer = string.toLowerCase().slice(10).startsWith('true');
-                if (transfer) {
-                    console.log("TRANSFER: HANGING UP");
-                    this.transfer();
-                }
-                // console.log("Transfer: ", transfer);
-            } else if (string.toLowerCase().startsWith('response')) {
-                // console.log("Response: ", string.slice(10));
-                // await this.sendAudioStream(string.slice(10));
-                ttsString = string.slice(10);
-                // await waitToFinish();
-                // fullResp += string.slice(10);
-            } else {
-                // console.log("Response: " + string.slice(1));
-                // await this.sendAudioStream(string.slice(1));
-                ttsString += string;
-                // await waitToFinish();
-                // fullResp += string;
+            let cleanedString = string.replace(/["]/g, '').replace(/\(.*?\)/g, '');
+            if (cleanedString.includes("--- CONNECT")) {
+                connect = true;
+                cleanedString = cleanedString.replace("--- CONNECT", '');
             }
+            if (cleanedString) {
+                log("~~~~~~~~~~~~ String ~~~~~~~~~~~~");
+                log(cleanedString);
+                log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+                fullResp += cleanedString;
+                if (cleanedString.includes(['HANG UP'])){
+                    let hangupString = cleanedString.replace('HANG UP -', '').trim();
+                    if (hangupString) {
+                        await this.sendAudioStream(hangupString);
+                        await waitToFinish();
+                    }
+                    this.hangup();
+                };
+
+                // if (cleanedString.includes(['--- CONNECT'])){
+                //     let connectString = cleanedString.replace('--- CONNECT', '').trim();
+                //     if (connectString) {
+                //         await this.sendAudioStream(connectString);
+                //         await waitToFinish();
+                //     }
+                //     this.transfer();
+                // };
+                await this.sendAudioStream(cleanedString);
+                await waitToFinish();
+            }
+            // this.transfer();
+            // if (string.toLowerCase().startsWith('rude')) {
+            //     const rude = string.toLowerCase().slice(6).startsWith('true');
+            //     console.log("Rude: ", rude);
+            //     if (rude) {
+            //         console.log("RUDE: HANGING UP");
+            //         this.hangup();
+            //     }
+            //     // console.log("Rude: ", rude);
+            // } else if (string.toLowerCase().startsWith('transfer')) {
+            //     const transfer = string.toLowerCase().slice(10).startsWith('true');
+            //     if (transfer) {
+            //         console.log("TRANSFER: HANGING UP");
+            //         this.transfer();
+            //     }
+            //     // console.log("Transfer: ", transfer);
+            // } else if (string.toLowerCase().startsWith('response')) {
+            //     // console.log("Response: ", string.slice(10));
+            //     await this.sendAudioStream(string.slice(10));
+            //     // ttsString = string.slice(10);
+            //     // await waitToFinish();
+            //     // fullResp += string.slice(10);
+            // } else {
+            //     // console.log("Response: " + string.slice(1));
+            //     await this.sendAudioStream(string.slice(1));
+            //     // ttsString += string;
+            //     // await waitToFinish();
+            //     // fullResp += string;
+            // }
 
         }
 
-        console.log("##############################################");
-        console.log(ttsString);
-        console.log("##############################################");
-        await this.sendAudioStream(ttsString);
-        await waitToFinish();
+        // console.log("##############################################");
+        // console.log(ttsString);
+        // console.log("##############################################");
+        // await this.sendAudioStream(ttsString);
+        // await waitToFinish();
 
         // this.agent.update_message(fullResp);
-        this.agent.update_message(fullResp);
+        if (fullResp) {
+            console.log("fullResp: ", fullResp);
+            // if (fullResp.includes("connect") && fullResp.includes("senior enrollment officer")) {
+            //     this.transfer();
+            // }
+            this.agent.update_message(fullResp);
+        } else {
+            await this.invokeStreamProcess(prompt);
+        }
+
+        if (connect) {
+            console.log("CONNECT");
+            this.transfer();
+        }
         // this.isPlaying = false;
     }
 
@@ -566,7 +610,7 @@ class MediaStream {
         vonage.voice.transferCallWithNCCO(this.call_id, [
             {
                 action: 'talk',
-                text: 'Hello, you are being connected, please wait...'
+                text: 'We are transfering your call voice'
             },
             {
                 "action": "connect",
@@ -584,6 +628,46 @@ class MediaStream {
                 }
             });
     };
+
+    // async isRude(sentence) {
+    //     const OpenAI_API_Base = process.env.OPENAI_API_BASE;
+    //     const OpenAI_API_Key = process.env.OPENAI_API_KEY;
+    //     const LLM_MODEL = process.env.LLM_MODEL;
+    //     const prompt = [
+    //         { role: "user", content: `Tell me whether following sentence is a rude sentence or not. Answer must be True or False. \nSentence: I am not Johnson.` },
+    //         { role: "assistant", content: "False", },
+    //         { role: "user", content: "Sentence: like fuck you", },
+    //         { role: "assistant", content: "True", },
+    //         { role: "user", content: "Sentence: You are asshole", },
+    //         { role: "assistant", content: "True", },
+    //         { role: "user", content: `Sentence: ${sentence}`, },
+    //     ]
+
+    //     let response = await fetch(`${OpenAI_API_Base}/chat/completions`, {
+    //         headers: {
+    //             "Content-Type": "application/json", "Authorization": `Bearer ${OpenAI_API_Key}`
+    //         },
+    //         method: "POST",
+    //         body: JSON.stringify({
+    //             model: LLM_MODEL,
+    //             messages: prompt,
+    //             temperature: 0,
+    //             max_tokens: 1,
+    //             stream: false, 
+    //         }),
+    //     });
+    
+    //     // console.log(response);
+    //     if (response.ok) { // Check if the request was successful
+    //         let jsonResponse = await response.json(); // Extract JSON data from the response
+    //         return jsonResponse.choices[0].message.content === "True"
+    //         // Use jsonResponse here - it contains the result you are looking for
+    //     } else {
+    //         // Handle HTTP errors
+    //         console.error("HTTP Error: " + response.status);
+    //         return false;
+    //     }
+    // }
 }
 
 module.exports = { MediaStream }
