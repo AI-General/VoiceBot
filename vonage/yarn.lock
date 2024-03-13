@@ -10,9 +10,9 @@
     dayjs "^1.11.10"
 
 "@deepgram/sdk@^3.0.1":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@deepgram/sdk/-/sdk-3.0.1.tgz#fc4d7bb5651679c89c0890f49e30883ec61ee217"
-  integrity sha512-W3EomebDXsZO/eCJApX7a2yOgoTEB2O7xbQpqDWyrvQCJI7VG28w3v3fOesVnxzofIZbnBJNapXCNPmEWW16LQ==
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@deepgram/sdk/-/sdk-3.2.0.tgz#ab3bc190700a0a38b460b392dee0fab64572222f"
+  integrity sha512-k55M+QbT8oLeL5TNp6oFMKTz47AaY2D36Et7mGa/hLYW79zmqK5NNl+EmuxT4LS+NGgAGq1mz6dPCxPkQoHEkw==
   dependencies:
     "@deepgram/captions" "^1.1.1"
     "@types/websocket" "^1.0.9"
@@ -61,9 +61,9 @@
     form-data "^4.0.0"
 
 "@types/node@*":
-  version "20.11.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.11.5.tgz#be10c622ca7fcaa3cf226cf80166abc31389d86e"
-  integrity sha512-g557vgQjUUfN76MZAN/dt1z3dzcUsimuysco0KeluHgrPdJXkP/XdAURgyO2W9fZWHRtRBiVKzKn8vyOAwlG+w==
+  version "20.11.27"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.11.27.tgz#debe5cfc8a507dd60fe2a3b4875b1604f215c2ac"
+  integrity sha512-qyUZfMnCg1KEz57r7pzFtSGt49f6RPkPBis3Vo4PbS7roQEDn22hiHzl/Lo1q4i4hDEgBJmBF/NTNg2XR0HbFg==
   dependencies:
     undici-types "~5.26.4"
 
