@@ -58,6 +58,7 @@ class MediaStream {
         this.isPlaying = false;
         this.intermediateTranscript = "";
         this.keepAlive = null;
+        this.ttsEngine = process.env.TTS_ENGINE
         console.log('2');
         console.log('3');
         // const dgconnection = deepgram.listen.live({model: "nova"});
@@ -154,109 +155,190 @@ class MediaStream {
         const voiceId = this.voice ? this.voice : '21m00Tcm4TlvDq8ikWAM'; // Replace with your voiceId
         let response;
         const Elevenlabs_Key = process.env.XI_API_KEY;
-        try {
-            // Elevenlabs
-            // console.time("xtts");
-            response = await axios({
-                method: "post",
-                url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=pcm_16000&optimize_streaming_latency=4`,
-                headers: {
-                    "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
-                },
-                // query: {
-                //     output_format: "pcm_16000",
-                // },
-                data: {
-                    text: text,
-                    model_id: "eleven_monolingual_v1",
-                    voice_settings: {
-                        stability: 0.15, similarity_boost: 0.5
-                    },
-                },
-                responseType: "stream",
-            });
-            
-            // xTTS
-            // let data = speaker;
-            // data["text"] = text;
-            // data["language"] = "en";
-            // data["stream_chunk_size"] = 20;
-            // // console.log("data: ", data);
-            // // console.time("xtts");
-            // // let timestamp = Date.now();
-            // // console.log("xTTS request timestamp: ", timestamp);
 
+        if (this.ttsEngine === "deepgram") {
+            // Deepgram-TTS
             // response = await axios({
             //     method: "post",
-            //     url: `${xTTS_server_url}/tts_stream`,
-            //     data: data,
-            //     responseType: "stream"
+            //     url: `https://api.deepgram.com/v1/speak?model=aura-asteria-en&encoding=linear16&container=wav`,
+            //     headers: {
+            //         "Authorization": `Token ${process.env.DEEPGRAM_API_KEY}`,
+            //         "Content-Type": "application/json",
+            //     },
+            //     data: { text: text },
             // })
+            // .then((response) => {
+            //     let input = response.data;
 
-            // Pheme
-            // response = await axios({
-            //     method: "post",
-            //     url: `http://127.0.0.1:7000/synthesize`,
-            //     data: { text: text, voice: "POD0000004393_S0000029" }, // POD0000004393_S0000029, male_voice, halle
-            //     responseType: "stream"
-            // })
+            // }).catch((error) => {
+            //     console.log(error);
+            // });
 
-        } catch (err) {
-            log("ERROR: ", err);
-        }
+            const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+            const response = await deepgram.speak.request(
+                { text },
+                {
+                    model: "aura-asteria-en",
+                    encoding: "linear16",
+                    sample_rate: 16000,
+                    container: "wav",
+                }
+            );
+            // STEP 3: Get the audio stream and headers from the response
+            const stream = await response.getStream();
 
-        // log("elevenlabs passed");
+            if (stream) {
+                // let buffer = Buffer.alloc(0);
+                // STEP 4: Convert the stream to an audio buffer
+                const getAudioBuffer = async (response) => {
+                    const reader = response.getReader();
+                    const chunks = [];
+                  
+                    while (true) {
+                      const { done, value } = await reader.read();
+                      if (done) break;
+                  
+                      chunks.push(value);
+                    }
+                  
+                    const dataArray = chunks.reduce(
+                      (acc, chunk) => Uint8Array.from([...acc, ...chunk]),
+                      new Uint8Array(0)
+                    );
+                  
+                    return Buffer.from(dataArray.buffer);
+                  };
 
-        const input = response.data;
-        
-        const startTime = Date.now();
-        // const outputWav = new stream.PassThrough();
-        // // Conversion of the MP3 stream to Mulaw (µ-law) format
-        // ffmpeg(input)
-        //     .audioFrequency(16000)
-        //     .audioChannels(1)
-        //     .audioCodec("pcm_s16le")
-        //     .format("wav")
-        //     .pipe(outputWav)
-        //     .on("end", () => {
-        //         // console.log('Conversion to WAV completed.');
-        //     })
-        //     .on("error", (err) => log("error: ", err));
+                let buffer = await getAudioBuffer(stream);
+                
+                const startTime = Date.now();
+                let count = 0;
+                while (buffer.length >= bytesPerChunk) {
+                    count++;
+                    const currentChunk = buffer.slice(0, bytesPerChunk);
+                    buffer = buffer.slice(bytesPerChunk);
+                    
+                    this.connection.send(currentChunk);
+                }
+                
+                const processingTime = Date.now() - startTime;
+                const additionalTime = (20 * count) - processingTime;
+                // console.log("additionalTime: ", additionalTime);
+                // console.log("count: ", count);
+                await wait(additionalTime);
+                this.isPlaying = false;
+                console.log("Audio Stream ended - isPlaying = False");
 
-
-        let buffer = Buffer.alloc(0);
-        // Handle each chunk of data, convert to base64, and send as a media event
-        input.on("data", (chunk) => {
-            // let timestamp = Date.now();
-            // console.log("message received timestamp: ", timestamp);
-
-            // console.timeEnd("xtts");
-            this.isPlaying = true;
-            // console.log("in stream - isPlaying = True");
-            buffer = Buffer.concat([buffer, chunk]);
-            // console.log("Chunk Length is ", chunk.length);
-            while (buffer.length >= bytesPerChunk) {
-                count++;
-                const currentChunk = buffer.slice(0, bytesPerChunk);
-                buffer = buffer.slice(bytesPerChunk);
-
-                // console.log("chunk", currentChunk);
-                this.connection.send(currentChunk);
-                // await sendWebSocketMessage(this.connection, currentChunk);
-                // Send currentChunk as a media event here
+            } else {
+                console.error("Error generating audio:", stream);
             }
-        });
 
-        // On stream end, stop playing and transcribing if it is the second stream
-        input.on("end", async () => {
-            const processingTime = Date.now() - startTime;
-            const additionalTime = (20 * count) - processingTime;
-            // console.log("additionalTime: ", additionalTime);
-            // console.log("count: ", count);
-            await wait(additionalTime);
-            this.isPlaying = false;
-            console.log("Audio Stream ended - isPlaying = False");
-        });
+        } else {
+            try {
+                // Elevenlabs
+                console.time("xtts");
+                response = await axios({
+                    method: "post",
+                    url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=pcm_16000&optimize_streaming_latency=4`,
+                    headers: {
+                        "xi-api-key": Elevenlabs_Key, "Content-Type": "application/json", accept: "audio/mpeg",
+                    },
+                    // query: {
+                    //     output_format: "pcm_16000",
+                    // },
+                    data: {
+                        text: text,
+                        model_id: "eleven_monolingual_v1",
+                        voice_settings: {
+                            stability: 0.15, similarity_boost: 0.5
+                        },
+                    },
+                    responseType: "stream",
+                });
+
+
+                // xTTS
+                // let data = speaker;
+                // data["text"] = text;
+                // data["language"] = "en";
+                // data["stream_chunk_size"] = 20;
+                // // console.log("data: ", data);
+                // // console.time("xtts");
+                // // let timestamp = Date.now();
+                // // console.log("xTTS request timestamp: ", timestamp);
+
+                // response = await axios({
+                //     method: "post",
+                //     url: `${xTTS_server_url}/tts_stream`,
+                //     data: data,
+                //     responseType: "stream"
+                // })
+
+                // Pheme
+                // response = await axios({
+                //     method: "post",
+                //     url: `http://127.0.0.1:7000/synthesize`,
+                //     data: { text: text, voice: "POD0000004393_S0000029" }, // POD0000004393_S0000029, male_voice, halle
+                //     responseType: "stream"
+                // })
+
+            } catch (err) {
+                log("ERROR: ", err);
+            }
+
+            // log("elevenlabs passed");
+
+            const input = response.data;
+
+            const startTime = Date.now();
+            // const outputWav = new stream.PassThrough();
+            // // Conversion of the MP3 stream to Mulaw (µ-law) format
+            // ffmpeg(input)
+            //     .audioFrequency(16000)
+            //     .audioChannels(1)
+            //     .audioCodec("pcm_s16le")
+            //     .format("wav")
+            //     .pipe(outputWav)
+            //     .on("end", () => {
+            //         // console.log('Conversion to WAV completed.');
+            //     })
+            //     .on("error", (err) => log("error: ", err));
+
+
+            let buffer = Buffer.alloc(0);
+            // Handle each chunk of data, convert to base64, and send as a media event
+            input.on("data", (chunk) => {
+                // let timestamp = Date.now();
+                // console.log("message received timestamp: ", timestamp);
+
+                // console.timeEnd("xtts");
+                this.isPlaying = true;
+                // console.log("in stream - isPlaying = True");
+                buffer = Buffer.concat([buffer, chunk]);
+                // console.log("Chunk Length is ", chunk.length);
+                while (buffer.length >= bytesPerChunk) {
+                    count++;
+                    const currentChunk = buffer.slice(0, bytesPerChunk);
+                    buffer = buffer.slice(bytesPerChunk);
+
+                    // console.log("chunk", currentChunk);
+                    this.connection.send(currentChunk);
+                    // await sendWebSocketMessage(this.connection, currentChunk);
+                    // Send currentChunk as a media event here
+                }
+            });
+
+            // On stream end, stop playing and transcribing if it is the second stream
+            input.on("end", async () => {
+                const processingTime = Date.now() - startTime;
+                const additionalTime = (20 * count) - processingTime;
+                // console.log("additionalTime: ", additionalTime);
+                // console.log("count: ", count);
+                await wait(additionalTime);
+                this.isPlaying = false;
+                console.log("Audio Stream ended - isPlaying = False");
+            });
+        }
 
     }
 
@@ -435,7 +517,7 @@ class MediaStream {
                 log(cleanedString);
                 log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                 fullResp += cleanedString;
-                if (cleanedString.includes(['HANG UP'])){
+                if (cleanedString.includes(['HANG UP'])) {
                     let hangupString = cleanedString.replace('HANG UP -', '').trim();
                     if (hangupString) {
                         await this.sendAudioStream(hangupString);
@@ -621,12 +703,12 @@ class MediaStream {
                 }]
             }
         ], (err, res) => {
-                if (err) {
-                    console.error(err);
-                } else {
-                    console.log(res);
-                }
-            });
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+            }
+        });
     };
 
     // async isRude(sentence) {
@@ -656,7 +738,7 @@ class MediaStream {
     //             stream: false, 
     //         }),
     //     });
-    
+
     //     // console.log(response);
     //     if (response.ok) { // Check if the request was successful
     //         let jsonResponse = await response.json(); // Extract JSON data from the response
