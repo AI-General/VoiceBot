@@ -28,9 +28,9 @@ const sampleRate = 16000; // 16kHz
 const bytesPerSample = 2; // 16-bit audio, so 2 bytes per sample
 const channels = 1; // Mono audio
 const bytesPerChunk = (sampleRate * chunkDuration * bytesPerSample * channels) / 1000;
-console.log(process.env.SPEAKER_PATH)
-const speaker = require(`../../${process.env.SPEAKER_PATH}`);
-const xTTS_server_url = process.env.XTTS_SERVER_URL;
+// console.log(process.env.SPEAKER_PATH)
+// const speaker = require(`../../${process.env.SPEAKER_PATH}`);
+// const xTTS_server_url = process.env.XTTS_SERVER_URL;
 
 const TO_NUMBER = process.env.TO_NUMBER
 const VONAGE_NUMBER = process.env.VONAGE_NUMBER
@@ -77,6 +77,7 @@ class MediaStream {
         log(`Media WS: created`);
 
         this.sendAudioStream("Hello, Debt Enrollment Center. My name is Tammy. How can I help you today?");
+        // this.invokeStreamProcess("Hello, Debt Enrollment Center. My name is Tammy. How can I help you today?");
     }
 
     processMessage(message) {

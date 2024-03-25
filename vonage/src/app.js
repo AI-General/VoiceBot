@@ -12,9 +12,9 @@ const VONAGE_API_KEY = process.env.VONAGE_API_KEY
 const VONAGE_API_SECRET = process.env.VONAGE_API_SECRET
 const VONAGE_APPLICATION_ID = process.env.VONAGE_APPLICATION_ID
 const VONAGE_APPLICATION_PRIVATE_KEY_PATH = process.env.VONAGE_APPLICATION_PRIVATE_KEY_PATH
-const SPEAKER_PATH = process.env.SPEAKER_PATH;
+// const SPEAKER_PATH = process.env.SPEAKER_PATH;
 
-const speaker_name = SPEAKER_PATH.split('/').pop().slice(0, -5);
+// const speaker_name = SPEAKER_PATH.split('/').pop().slice(0, -5);
 
 const privateKey = fs.readFileSync(VONAGE_APPLICATION_PRIVATE_KEY_PATH);
 
@@ -95,7 +95,7 @@ app.post('/event', (req, res) => {
         const recording_url = req.body.recording_url;
         const fileId = req.body.recording_uuid;
         const recordingsDirPath = path.join(__dirname, 'recordings');
-        const filePath = path.join(recordingsDirPath, `${speaker_name}_${fileId}.mp3`);
+        const filePath = path.join(recordingsDirPath, `${fileId}.mp3`);
 
         fs.mkdir(recordingsDirPath, { recursive: true }, (err) => {
             if (err) {
